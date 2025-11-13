@@ -29,7 +29,10 @@ data class MenuItemNetwork(
     val price: String, // Keep as String to match server response, can be converted to Double later.
 
     @SerialName("image")
-    val image: String
+    val image: String,
+
+    @SerialName("category")
+    val category: String
 )
 
 

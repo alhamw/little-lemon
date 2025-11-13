@@ -133,7 +133,7 @@ fun MainPanel(menuItems: List<MenuItemNetwork>) {
         bottomBar = { },
         content = { paddingValues ->
             Box(modifier = Modifier.padding(paddingValues)) {
-                NavigationComposable(navController, isLoggedIn)
+                NavigationComposable(navController, isLoggedIn, menuItems)
             }
         }
     )

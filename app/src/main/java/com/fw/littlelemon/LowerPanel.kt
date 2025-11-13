@@ -94,7 +94,7 @@ fun MenuDish(navController: NavHostController? = null, dish: MenuItemNetwork) {
 @Composable
 fun LowerPanelPreview() {
     LowerPanel(navController = NavHostController(LocalContext.current), dishes = listOf(
-        MenuItemNetwork(1, "Dish Name", "This is a description of the dish.", "9.99", ""),
-        MenuItemNetwork(2, "Another Dish", "This is another description.", "12.99", "")
+        MenuItemNetwork(1, "Dish Name", "This is a description of the dish.", "9.99", "", ""),
+        MenuItemNetwork(2, "Another Dish", "This is another description.", "12.99", "", "")
     ))
 }
