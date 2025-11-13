@@ -20,10 +20,6 @@ import com.fw.littlelemon.ui.theme.Green
 import com.fw.littlelemon.ui.theme.GreyAF
 import com.fw.littlelemon.ui.theme.White
 
-
-/**
- * A reusable composable for the text input fields in the registration form.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LemonTextField(
@@ -48,7 +44,8 @@ fun LemonTextField(
                 .fillMaxWidth()
                 .border(1.dp, color = GreyAF, shape = RoundedCornerShape(8.dp)),
             singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = keyboardType),colors = TextFieldDefaults.colors(
+            keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+            colors = TextFieldDefaults.colors(
                 focusedIndicatorColor = White,
                 unfocusedIndicatorColor = White,
                 focusedContainerColor = White,

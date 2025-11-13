@@ -15,15 +15,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,26 +31,66 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.fw.littlelemon.ui.theme.LittleLemonTheme
+import androidx.room.Room
 import com.fw.littlelemon.ui.theme.White
-import kotlinx.coroutines.flow.first
+import io.ktor.client.HttpClient
+import io.ktor.client.call.body
+import io.ktor.client.engine.android.Android
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.request.get
+import io.ktor.http.ContentType
+import io.ktor.serialization.kotlinx.json.json
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
 
 @OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
+    private val httpClient =
+        HttpClient(Android) {
+            install(ContentNegotiation) {
+                json(Json {
+                    prettyPrint = true
+                    isLenient = true
+                    ignoreUnknownKeys = true
+                }, contentType = ContentType.Text.Plain)
+            }
+        }
+
+    private val database by lazy {
+        Room.databaseBuilder(
+            applicationContext,
+            AppDatabase::class.java,
+            "little-lemon-db"
+        ).build()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val menuNetwork = httpClient.get("https://raw.githubusercontent.com/Meta-Mobile-Developer-PC/Working-With-Data-API/main/menu.json").body<MenuNetwork>()
+                val menuEntities = menuNetwork.menu.map { it.toEntity() }
+                database.menuDao().insertAll(menuEntities)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+
         enableEdgeToEdge()
         setContent {
-            MainPanel()
+            val menuItems by database.menuDao().getAllMenuItems().observeAsState(emptyList())
+            MainPanel(menuItems)
         }
     }
 }
 
 @Composable
-fun MainPanel() {
+fun MainPanel(menuItems: List<MenuItemEntity>) {
     val context = LocalContext.current
     val userPreferences = remember { UserPreferences(context) }
     val navController = rememberNavController()
@@ -73,7 +112,7 @@ fun MainPanel() {
                         contentAlignment = Alignment.Center
                     ) {
                         Image(
-                            painter = painterResource(id = R.drawable.logo), // Replace with your logo
+                            painter = painterResource(id = R.drawable.logo),
                             contentDescription = "Little Lemon Logo",
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -92,8 +131,8 @@ fun MainPanel() {
                                 painter = painterResource(id = R.drawable.profile),
                                 contentDescription = "Profile",
                                 modifier = Modifier
-                                    .size(50.dp) // Example size
-                                    .padding(end = 12.dp), // Padding on the right
+                                    .size(50.dp)
+                                    .padding(end = 12.dp),
                                 contentScale = ContentScale.Fit
                             )
                         }
@@ -105,7 +144,7 @@ fun MainPanel() {
         bottomBar = { },
         content = { paddingValues ->
             Box(modifier = Modifier.padding(paddingValues)) {
-                NavigationComposable(navController, isLoggedIn)
+                NavigationComposable(navController, isLoggedIn, menuItems)
             }
         }
     )
@@ -114,5 +153,5 @@ fun MainPanel() {
 @Preview(showBackground = true)
 @Composable
 fun MainPanelPreview() {
-    MainPanel()
+    MainPanel(emptyList())
 }
