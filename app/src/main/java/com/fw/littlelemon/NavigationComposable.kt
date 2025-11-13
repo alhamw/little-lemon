@@ -9,7 +9,7 @@ import androidx.navigation.compose.composable
 fun NavigationComposable(
     navController: NavHostController,
     isLoggedIn: Boolean,
-    menuItems: List<MenuItemNetwork>
+    menuItems: List<MenuItemEntity>
 ) {
     val startDestination = if (isLoggedIn) {
         Home.route
@@ -22,7 +22,7 @@ fun NavigationComposable(
             Onboarding(navController)
         }
         composable(Home.route) {
-            Home(navController, menuItems)
+            Home(menuItems)
         }
         composable(Profile.route) {
             Profile(navController)

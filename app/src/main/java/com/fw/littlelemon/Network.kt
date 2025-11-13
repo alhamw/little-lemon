@@ -3,19 +3,13 @@ package com.fw.littlelemon
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-// This data class represents the entire JSON payload,
-// which contains a list of menu items.
 @Serializable
 data class MenuNetwork(
-    // The @SerialName("menu") annotation tells the serializer that
-    // the "menu" key in the JSON should be mapped to this "menu" property.
     val menu: List<MenuItemNetwork>
 )
 
-// This data class represents a single item in the menu list.
 @Serializable
 data class MenuItemNetwork(
-    // The @SerialName("id") annotation maps the "id" JSON key.
     @SerialName("id")
     val id: Int,
 
@@ -26,7 +20,7 @@ data class MenuItemNetwork(
     val description: String,
 
     @SerialName("price")
-    val price: String, // Keep as String to match server response, can be converted to Double later.
+    val price: String,
 
     @SerialName("image")
     val image: String,
@@ -34,5 +28,16 @@ data class MenuItemNetwork(
     @SerialName("category")
     val category: String
 )
+
+fun MenuItemNetwork.toEntity(): MenuItemEntity {
+    return MenuItemEntity(
+        id = this.id,
+        title = this.title,
+        description = this.description,
+        price = this.price,
+        image = this.image,
+        category = this.category
+    )
+}
 
 

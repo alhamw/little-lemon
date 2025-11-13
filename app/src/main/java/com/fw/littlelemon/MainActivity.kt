@@ -20,6 +20,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -30,8 +31,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.room.Room
 import com.fw.littlelemon.ui.theme.White
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -40,6 +43,8 @@ import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.get
 import io.ktor.http.ContentType
 import io.ktor.serialization.kotlinx.json.json
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -55,31 +60,37 @@ class MainActivity : ComponentActivity() {
             }
         }
 
+    private val database by lazy {
+        Room.databaseBuilder(
+            applicationContext,
+            AppDatabase::class.java,
+            "little-lemon-db"
+        ).build()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val menuNetwork = httpClient.get("https://raw.githubusercontent.com/Meta-Mobile-Developer-PC/Working-With-Data-API/main/menu.json").body<MenuNetwork>()
+                val menuEntities = menuNetwork.menu.map { it.toEntity() }
+                database.menuDao().insertAll(menuEntities)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+
         enableEdgeToEdge()
         setContent {
-            var menuItems by remember { mutableStateOf<List<MenuItemNetwork>>(emptyList()) }
-            LaunchedEffect(key1 = Unit) {
-                try {
-                    val menuNetwork: MenuNetwork = httpClient
-                        .get("https://raw.githubusercontent.com/Meta-Mobile-Developer-PC/Working-With-Data-API/main/menu.json")
-                        .body()
-                    // Update state with the list of menu items from the decoded object
-                    menuItems = menuNetwork.menu
-                } catch (e: Exception) {
-                    // Handle network errors (e.g., show a toast or a log message)
-                    e.printStackTrace()
-                }
-            }
+            val menuItems by database.menuDao().getAllMenuItems().observeAsState(emptyList())
             MainPanel(menuItems)
         }
     }
 }
 
 @Composable
-fun MainPanel(menuItems: List<MenuItemNetwork>) {
+fun MainPanel(menuItems: List<MenuItemEntity>) {
     val context = LocalContext.current
     val userPreferences = remember { UserPreferences(context) }
     val navController = rememberNavController()
@@ -101,7 +112,7 @@ fun MainPanel(menuItems: List<MenuItemNetwork>) {
                         contentAlignment = Alignment.Center
                     ) {
                         Image(
-                            painter = painterResource(id = R.drawable.logo), // Replace with your logo
+                            painter = painterResource(id = R.drawable.logo),
                             contentDescription = "Little Lemon Logo",
                             modifier = Modifier
                                 .fillMaxWidth()

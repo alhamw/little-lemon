@@ -46,9 +46,6 @@ fun Onboarding(navController: NavHostController) {
     )
 }
 
-/**
- * A composable function for the main form content.
- */
 @Composable
 fun RegistrationForm(navController: NavHostController) {
     val context = LocalContext.current
