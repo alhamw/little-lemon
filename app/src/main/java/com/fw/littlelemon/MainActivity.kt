@@ -33,21 +33,53 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.fw.littlelemon.ui.theme.White
+import io.ktor.client.HttpClient
+import io.ktor.client.call.body
+import io.ktor.client.engine.android.Android
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.request.get
+import io.ktor.http.ContentType
+import io.ktor.serialization.kotlinx.json.json
+import kotlinx.serialization.json.Json
 
 @OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
+    private val httpClient =
+        HttpClient(Android) {
+            install(ContentNegotiation) {
+                json(Json {
+                    prettyPrint = true
+                    isLenient = true
+                    ignoreUnknownKeys = true
+                }, contentType = ContentType.Text.Plain)
+            }
+        }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         enableEdgeToEdge()
         setContent {
-            MainPanel()
+            var menuItems by remember { mutableStateOf<List<MenuItemNetwork>>(emptyList()) }
+            LaunchedEffect(key1 = Unit) {
+                try {
+                    val menuNetwork: MenuNetwork = httpClient
+                        .get("https://raw.githubusercontent.com/Meta-Mobile-Developer-PC/Working-With-Data-API/main/menu.json")
+                        .body()
+                    // Update state with the list of menu items from the decoded object
+                    menuItems = menuNetwork.menu
+                } catch (e: Exception) {
+                    // Handle network errors (e.g., show a toast or a log message)
+                    e.printStackTrace()
+                }
+            }
+            MainPanel(menuItems)
         }
     }
 }
 
 @Composable
-fun MainPanel() {
+fun MainPanel(menuItems: List<MenuItemNetwork>) {
     val context = LocalContext.current
     val userPreferences = remember { UserPreferences(context) }
     val navController = rememberNavController()
@@ -88,8 +120,8 @@ fun MainPanel() {
                                 painter = painterResource(id = R.drawable.profile),
                                 contentDescription = "Profile",
                                 modifier = Modifier
-                                    .size(50.dp) // Example size
-                                    .padding(end = 12.dp), // Padding on the right
+                                    .size(50.dp)
+                                    .padding(end = 12.dp),
                                 contentScale = ContentScale.Fit
                             )
                         }
@@ -110,5 +142,5 @@ fun MainPanel() {
 @Preview(showBackground = true)
 @Composable
 fun MainPanelPreview() {
-    MainPanel()
+    MainPanel(emptyList())
 }
